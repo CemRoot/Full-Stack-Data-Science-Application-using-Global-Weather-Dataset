@@ -2,19 +2,17 @@ from kafka import KafkaProducer
 import pandas as pd
 import time
 import json
-import os
 
-# Veri dosyasını göreceli bir yoldan yüklüyoruz
-data = pd.read_csv(
-    r'C:\Users\eminc\OneDrive\Desktop\NATIONAL-COLLEGE-OF-IRELAND-LESSONS-LABS\LABS\Programming for Artificial Intelligence (MSCAI1) LAB\CA_Cem-Koyluoglu\app\GlobalWeatherRepository.csv')
+# DigitalOcean Server send data to Kafka
+data = pd.read_csv('/root/GlobalWeatherRepository.csv')
 
-# Kafka producer tanımlaması
+# Kafka producer create
 producer = KafkaProducer(
-    bootstrap_servers='localhost:9092',
+    bootstrap_servers='localhost:9092',  # Kafka broker address
     value_serializer=lambda v: json.dumps(v).encode('utf-8')
 )
 
-# Her satırı Kafka'ya gönderiyoruz
+# Each row of the data is sent to the Kafka topic
 for index, row in data.iterrows():
     weather_data = {
         "location": row["location_name"],
@@ -25,8 +23,9 @@ for index, row in data.iterrows():
     }
     producer.send('global_weather', value=weather_data)
     print(f"Sent data: {weather_data}")
-    time.sleep(1)
+    time.sleep(1)  # 1second delay between data sending
 
+# Close the producer
 producer.flush()
 producer.close()
 print("Producer finished")
