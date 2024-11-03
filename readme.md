@@ -48,7 +48,7 @@ This data helps in generating insights for weather patterns, environmental studi
 - [x] Data Analytics and Visualization (20 Marks):
 - [x] Kafka Producer and Consumer for Streaming Data (20 Marks):
 - [x] Database Operations (20 Marks):
-- [x]Streamlit Web Application (20 Marks):
+- [x] Streamlit Web Application (20 Marks):
 
 
 ### Developer
