@@ -15,7 +15,7 @@ st.header("Cleaned Weather Data")
 
 @st.cache_data
 def load_data():
-    response = requests.get("http://localhost:5000/data")  # Sunucu IP’sini kullanın
+    response = requests.get("http://157.230.103.203:5000/data")  # Sunucu IP’sini kullanın
     if response.status_code == 200:
         data = response.json()
         return pd.DataFrame(data)
@@ -32,7 +32,7 @@ st.header("Live Weather Updates")
 st.write("Real-time weather data coming through Kafka")
 
 def get_live_data():
-    response = requests.get("http://localhost:5000/live")  # Sunucu IP’sini kullanın
+    response = requests.get("http://157.230.103.203:5000/live")  # Sunucu IP’sini kullanın
     if response.status_code == 200:
         live_data = response.json()
         return pd.DataFrame(live_data)
