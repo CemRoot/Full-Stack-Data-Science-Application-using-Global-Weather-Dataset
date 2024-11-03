@@ -103,4 +103,3 @@ Bu veri, hava durumu desenleri, çevre çalışmaları ve öngörücü analizler
 
 ### Geliştirici
 - **Hazırlayan**: Cem Koyluoglu
-```
