@@ -4,109 +4,121 @@ import requests
 import plotly.express as px
 from streamlit_autorefresh import st_autorefresh
 
-# Set page title and layout for improved UX
-st.set_page_config(page_title="Global Weather Data Dashboard", layout="wide")
-st.title("🌍 Global Weather Data Dashboard")
+# Set page title and layout
+st.set_page_config(page_title="Real-Time Weather Dashboard", layout="wide")
 
-# Sidebar settings for user controls
-st.sidebar.header("Dashboard Settings")
-refresh_rate = st.sidebar.selectbox("Select Refresh Interval (seconds)", options=[1, 2, 5, 10], index=2)
+# Main title
+st.markdown("<h1 style='text-align: center; color: #4A90E2;'>🌍 Real-Time Global Weather Dashboard</h1>", unsafe_allow_html=True)
 
-# Load cleaned weather data function (cached)
+# Sidebar - Configuration and filters
+st.sidebar.header("Settings")
+st.sidebar.write("Customize your view")
+
+# Refresh rate selection
+refresh_rate = st.sidebar.selectbox("Refresh Interval (seconds)", options=[1, 2, 5, 10], index=2)
+
+# Load initial weather data (static for reference)
 @st.cache_data
-def load_data():
-    response = requests.get("http://157.230.103.203:5000/data")  # Update with actual server IP
+def load_initial_data():
+    response = requests.get("http://157.230.103.203:5000/data")  # Use your server IP
     if response.status_code == 200:
-        data = response.json()
-        return pd.DataFrame(data)
+        return pd.DataFrame(response.json())
     else:
-        st.error("Failed to load cleaned weather data.")
+        st.sidebar.error("Failed to load initial data.")
         return pd.DataFrame()
 
-# Initial load of the cleaned data
-data = load_data()
+initial_data = load_initial_data()
+available_countries = initial_data['country'].unique() if not initial_data.empty else []
 
-# Sidebar for country selection with search-enabled dropdown
-country_options = data['country'].unique() if not data.empty else []
-selected_countries = st.sidebar.multiselect("Select countries to display:", country_options, default=country_options)
+# Sidebar - Country selector with search option
+selected_countries = st.sidebar.multiselect("Choose countries", available_countries, default=available_countries[:5])
 
-# Sidebar button to clear selection
-if st.sidebar.button("Clear Selection"):
-    selected_countries = []
+# Sidebar - Graph selector
+st.sidebar.subheader("Graphs to Display")
+show_temp = st.sidebar.checkbox("Temperature over Time", value=True)
+show_humidity = st.sidebar.checkbox("Humidity over Time", value=True)
+show_location_temp = st.sidebar.checkbox("Temperature by Location", value=True)
 
-# Live data retrieval function
-def get_live_data():
-    response = requests.get("http://157.230.103.203:5000/live")  # Update with actual server IP
-    if response.status_code == 200:
-        live_data = response.json()
-        return pd.DataFrame(live_data)
-    else:
-        st.error("Unable to fetch live data.")
-        return pd.DataFrame()
-
-# Initialize session state to store accumulated live data for continuous plotting
+# Initialize session state for accumulating live data
 if "live_data" not in st.session_state:
     st.session_state.live_data = pd.DataFrame()
 
-# Function to update live data in session state
-def update_live_data():
-    new_data = get_live_data()
-    if not new_data.empty:
-        # Accumulate new data while filtering by selected countries
-        st.session_state.live_data = pd.concat([st.session_state.live_data, new_data], ignore_index=True)
-        # Filter based on selected countries
-        st.session_state.live_data = st.session_state.live_data[st.session_state.live_data['country'].isin(selected_countries)]
+# Function to fetch live data from API
+def fetch_live_data():
+    response = requests.get("http://157.230.103.203:5000/live")  # Replace with actual server IP
+    if response.status_code == 200:
+        live_data = pd.DataFrame(response.json())
+        return live_data[live_data['country'].isin(selected_countries)]  # Filter by selected countries
+    else:
+        st.error("Unable to retrieve live data.")
+        return pd.DataFrame()
 
-# Automatic refresh to continuously fetch live data
+# Update live data in session state
+def update_live_data():
+    new_data = fetch_live_data()
+    if not new_data.empty:
+        st.session_state.live_data = pd.concat([st.session_state.live_data, new_data]).drop_duplicates().reset_index(drop=True)
+
+# Automatic refresh
 st_autorefresh(interval=refresh_rate * 1000, key="data_refresh")
 update_live_data()
 
-# Display cleaned data in a collapsible section
-with st.expander("View Cleaned Weather Data"):
-    st.dataframe(data)
-
-# Layout for the live graphs
-st.markdown("### Live Weather Graphs")
+# Dashboard layout
+st.markdown("## Live Weather Graphs")
 cols = st.columns(3)
 
-# Plot Temperature over Time for selected countries
-if not st.session_state.live_data.empty:
+# Display Temperature over Time if selected
+if show_temp and not st.session_state.live_data.empty:
     with cols[0]:
-        fig_temp = px.line(
-            st.session_state.live_data, x="last_updated", y="temperature", color="country",
-            title="Temperature Over Time", labels={"temperature": "Temperature (°C)"}
-        )
-        fig_temp.update_layout(yaxis=dict(range=[st.session_state.live_data["temperature"].min() - 5,
-                                                 st.session_state.live_data["temperature"].max() + 5]))
-        st.plotly_chart(fig_temp, use_container_width=True)
+        temp_fig = px.line(st.session_state.live_data, x="last_updated", y="temperature", color="country",
+                           title="Temperature Over Time", labels={"temperature": "Temperature (°C)", "last_updated": "Time"})
+        temp_fig.update_traces(mode="lines+markers")
+        st.plotly_chart(temp_fig, use_container_width=True)
 
-    # Plot Humidity over Time for selected countries
+# Display Humidity over Time if selected
+if show_humidity and not st.session_state.live_data.empty:
     with cols[1]:
-        fig_humidity = px.line(
-            st.session_state.live_data, x="last_updated", y="humidity", color="country",
-            title="Humidity Over Time", labels={"humidity": "Humidity (%)"}
-        )
-        fig_humidity.update_layout(yaxis=dict(range=[st.session_state.live_data["humidity"].min() - 5,
-                                                     st.session_state.live_data["humidity"].max() + 5]))
-        st.plotly_chart(fig_humidity, use_container_width=True)
+        humidity_fig = px.line(st.session_state.live_data, x="last_updated", y="humidity", color="country",
+                               title="Humidity Over Time", labels={"humidity": "Humidity (%)", "last_updated": "Time"})
+        humidity_fig.update_traces(mode="lines+markers")
+        st.plotly_chart(humidity_fig, use_container_width=True)
 
-    # Plot Temperature vs Coordinates (Latitude and Longitude)
+# Display Temperature by Location if selected
+if show_location_temp and not st.session_state.live_data.empty:
     with cols[2]:
-        fig_coords = px.scatter(
-            st.session_state.live_data, x="latitude", y="longitude", size="temperature", color="country",
-            title="Temperature by Location", labels={"latitude": "Latitude", "longitude": "Longitude"},
-            hover_data={"temperature": True, "last_updated": True}
+        loc_temp_fig = px.scatter_geo(
+            st.session_state.live_data,
+            lat="latitude",
+            lon="longitude",
+            color="temperature",
+            size="temperature",
+            hover_name="country",
+            projection="natural earth",
+            title="Temperature by Location",
+            labels={"temperature": "Temperature (°C)"}
         )
-        fig_coords.update_layout(yaxis=dict(scaleanchor="x", scaleratio=1))  # Make latitude and longitude equal scaling
-        st.plotly_chart(fig_coords, use_container_width=True)
-else:
-    st.write("Waiting for live data...")
+        loc_temp_fig.update_geos(showcoastlines=True, coastlinecolor="LightBlue", showland=True, landcolor="LightGreen")
+        st.plotly_chart(loc_temp_fig, use_container_width=True)
 
-# Add footer or info section to give context
-st.sidebar.markdown("#### About")
+# Footer for additional info
+st.sidebar.markdown("### About")
 st.sidebar.info(
-    "This dashboard provides real-time global weather data updates, displaying temperature, humidity, and location-specific "
-    "temperature details. Select countries and set refresh intervals for a customized view. Data is refreshed seamlessly "
-    "to ensure continuous tracking without interruptions."
+    """
+    This real-time weather dashboard allows you to view temperature and humidity updates across the world.
+    You can select specific countries, choose the graphs to display, and set the refresh rate for data updates.
+    """
 )
 
+# Styling tips and color consistency for improved UX
+st.markdown(
+    """
+    <style>
+    .css-1offfwp, .css-1inwz65, .css-1d391kg {
+        background-color: #f5f5f5 !important;
+    }
+    .st-bp {
+        color: #4A90E2 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True
+)
