@@ -70,8 +70,8 @@ cols = st.columns(3)
 # Display Temperature over Time if selected
 if show_temp and not st.session_state.live_data.empty:
     with cols[0]:
-        temp_fig = px.line(st.session_state.live_data, x="last_updated", y="temperature_celsius", color="country",
-                           title="Temperature Over Time", labels={"temperature_celsius": "Temperature (°C)", "last_updated": "Time"})
+        temp_fig = px.line(st.session_state.live_data, x="last_updated", y="temperature", color="country",
+                           title="Temperature Over Time", labels={"temperature": "Temperature (°C)", "last_updated": "Time"})
         temp_fig.update_traces(mode="lines+markers")
         st.plotly_chart(temp_fig, use_container_width=True)
 
@@ -96,12 +96,12 @@ if show_location_temp and not st.session_state.live_data.empty:
             st.session_state.live_data,
             lat="latitude",
             lon="longitude",
-            color="temperature_celsius",
-            size="temperature_celsius",
+            color="temperature",
+            size="temperature",
             hover_name="country",
             projection="natural earth",
             title="Temperature by Location",
-            labels={"temperature_celsius": "Temperature (°C)"}
+            labels={"temperature": "Temperature (°C)"}
         )
         loc_temp_fig.update_geos(showcoastlines=True, coastlinecolor="LightBlue", showland=True, landcolor="LightGreen")
         st.plotly_chart(loc_temp_fig, use_container_width=True)
