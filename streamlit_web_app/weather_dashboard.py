@@ -34,6 +34,27 @@ selected_countries = st.sidebar.multiselect(
     "Choose up to 5 countries", available_countries, default=available_countries[:5],
     help="You can select a maximum of 5 countries."
 )
+
+
+def update_available_countries():
+    # Kafka'dan canlı veri çekiliyor
+    live_data = fetch_live_data()
+    if not live_data.empty and 'country' in live_data.columns:
+        # Mevcut verideki ülkeleri dinamik olarak güncelle
+        st.session_state.available_countries = live_data['country'].unique()
+
+
+# Uygulama başlangıcında veya yeni veri geldiğinde güncelle
+if "available_countries" not in st.session_state:
+    st.session_state.available_countries = initial_data['country'].unique()
+else:
+    update_available_countries()
+
+# Sidebar - Dinamik ülke seçici
+selected_countries = st.sidebar.multiselect(
+    "Choose up to 5 countries", st.session_state.available_countries, default=st.session_state.available_countries[:5],
+    help="You can select a maximum of 5 countries."
+)
 if len(selected_countries) > 5:
     st.sidebar.warning("You can select up to 5 countries only.")
     selected_countries = selected_countries[:5]
