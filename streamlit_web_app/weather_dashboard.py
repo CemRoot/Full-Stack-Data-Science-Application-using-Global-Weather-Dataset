@@ -53,6 +53,7 @@ def fetch_live_data():
     response = requests.get("http://157.230.103.203:5000/live")
     if response.status_code == 200:
         live_data = pd.DataFrame(response.json())
+        st.write("Fetched live data:", live_data)  # Veriyi görüntüleme
         if 'country' in live_data.columns:
             return live_data[live_data['country'].isin(selected_countries)]
         else:
