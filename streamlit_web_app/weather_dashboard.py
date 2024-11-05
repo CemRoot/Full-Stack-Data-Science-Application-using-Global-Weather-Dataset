@@ -29,9 +29,14 @@ st.dataframe(data)
 if "live_data" not in st.session_state:
     st.session_state.live_data = pd.DataFrame()
 
-# Country selection for filtering live data
+# Country selection in the sidebar for filtering live data
+st.sidebar.header("Country Selection")
 country_options = data['country'].unique() if not data.empty else []
-selected_countries = st.multiselect("Select countries to display", options=country_options, default=country_options)
+selected_countries = st.sidebar.multiselect("Select countries to display:", options=country_options, default=country_options, help="Choose countries to show data for in the charts.")
+
+# Option to clear all selections
+if st.sidebar.button("Clear Selection"):
+    selected_countries = []
 
 # Fetch live data from API
 def get_live_data():
@@ -73,4 +78,3 @@ if not st.session_state.live_data.empty:
     st.plotly_chart(fig_humidity, use_container_width=True)
 else:
     st.write("Waiting for live data...")
-
