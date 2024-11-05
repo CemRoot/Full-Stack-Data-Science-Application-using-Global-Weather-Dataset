@@ -17,7 +17,7 @@ st.sidebar.write("Customize your view")
 # Refresh rate selection
 refresh_rate = st.sidebar.selectbox("Refresh Interval (seconds)", options=[1, 2, 5, 10], index=2)
 
-# Load initial weather data (static for reference)
+# Load initial weather data function (static for reference)
 @st.cache_data
 def load_initial_data():
     response = requests.get("http://157.230.103.203:5000/data")  # Use your server IP
@@ -75,13 +75,19 @@ if show_temp and not st.session_state.live_data.empty:
         temp_fig.update_traces(mode="lines+markers")
         st.plotly_chart(temp_fig, use_container_width=True)
 
-# Display Humidity over Time if selected
+# Display Humidity over Time if selected, with check for humidity column
 if show_humidity and not st.session_state.live_data.empty:
-    with cols[1]:
-        humidity_fig = px.line(st.session_state.live_data, x="last_updated", y="humidity", color="country",
-                               title="Humidity Over Time", labels={"humidity": "Humidity (%)", "last_updated": "Time"})
-        humidity_fig.update_traces(mode="lines+markers")
-        st.plotly_chart(humidity_fig, use_container_width=True)
+    if "humidity" in st.session_state.live_data.columns:
+        with cols[1]:
+            humidity_fig = px.line(
+                st.session_state.live_data, x="last_updated", y="humidity", color="country",
+                title="Humidity Over Time", labels={"humidity": "Humidity (%)", "last_updated": "Time"}
+            )
+            humidity_fig.update_traces(mode="lines+markers")
+            st.plotly_chart(humidity_fig, use_container_width=True)
+    else:
+        with cols[1]:
+            st.warning("Humidity data is not available in the current dataset.")
 
 # Display Temperature by Location if selected
 if show_location_temp and not st.session_state.live_data.empty:
